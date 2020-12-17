@@ -28,6 +28,11 @@ interface ICacheBuilder {
     function get();
 
     /**
+     * @return CacheInterface|null
+     */
+    function getCache() : ?CacheInterface;
+
+    /**
      * @return string|null
      */
     function getCacheKey() : ?string;

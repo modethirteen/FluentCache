@@ -96,7 +96,7 @@ class CacheBuilder implements ICacheBuilder {
 
     public function get() {
         $dispatcher = $this->dispatcher;
-        if($this->cache !== null) {
+        if($this->getCache() !== null) {
             if($dispatcher !== null) {
                 $dispatcher->dispatch(new Event(self::STATE_CACHE_GET_START));
             }
@@ -131,7 +131,7 @@ class CacheBuilder implements ICacheBuilder {
         if($buildValidator($result) === true) {
             $dispatcher->dispatch(new Event(self::STATE_BUILD_VALIDATION_PASS));
             $key = $this->getCacheKey();
-            if($this->cache !== null && $key !== null) {
+            if($this->getCache() !== null && $key !== null) {
                 $cacheLifespanBuilder = $this->cacheLifespanBuilder;
                 $dispatcher->dispatch(new Event(self::STATE_CACHE_SET_START));
                 try {
@@ -147,6 +147,10 @@ class CacheBuilder implements ICacheBuilder {
             $dispatcher->dispatch(new Event(self::STATE_BUILD_VALIDATION_FAIL));
         }
         return $result;
+    }
+
+    public function getCache() : ?CacheInterface {
+        return $this->cache;
     }
 
     public function getCacheKey() : ?string {
