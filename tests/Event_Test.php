@@ -16,7 +16,6 @@
  */
 namespace modethirteen\FluentCache\Tests;
 
-use Exception;
 use modethirteen\FluentCache\Event;
 use PHPUnit\Framework\TestCase;
 
@@ -42,7 +41,7 @@ class Event_Test extends TestCase {
     public function Can_construct_an_event_with_error_without_stopped_propagation() : void {
 
         // act
-        $e = new Exception();
+        $e = new CacheException();
         $event = (new Event('foo'))
             ->withException($e);
 
@@ -58,7 +57,7 @@ class Event_Test extends TestCase {
     public function Can_construct_an_event_with_error_with_stopped_propagation() : void {
 
         // act
-        $e = new Exception();
+        $e = new CacheException();
         $event = (new Event('foo'))
             ->withException($e, true);
 
