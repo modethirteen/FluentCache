@@ -31,7 +31,7 @@ class Event_Test extends TestCase {
         $event = new Event('foo');
 
         // assert
-        static::assertEquals('foo', $event->getState());
+        static::assertEquals('foo', $event->getName());
         static::assertEquals([], $event->getData());
         static::assertFalse($event->isPropagationStopped());
     }
@@ -47,7 +47,7 @@ class Event_Test extends TestCase {
             ->withException($e);
 
         // assert
-        static::assertEquals('foo', $event->getState());
+        static::assertEquals('foo', $event->getName());
         static::assertEquals(['exception' => $e], $event->getData());
         static::assertFalse($event->isPropagationStopped());
     }
@@ -63,7 +63,7 @@ class Event_Test extends TestCase {
             ->withException($e, true);
 
         // assert
-        static::assertEquals('foo', $event->getState());
+        static::assertEquals('foo', $event->getName());
         static::assertEquals(['exception' => $e], $event->getData());
         static::assertTrue($event->isPropagationStopped());
     }

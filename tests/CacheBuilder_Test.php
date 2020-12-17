@@ -340,7 +340,7 @@ class CacheBuilder_Test extends TestCase {
             ->withConsecutive(
                 [static::equalTo(new Event('cache:get:start'))],
                 [static::callback(function(Event $event) : bool {
-                    if($event->getState() !== 'cache:get:error') {
+                    if($event->getName() !== 'cache:get:error') {
                         return false;
                     }
                     if(!isset($event->getData()['exception'])) {
@@ -392,7 +392,7 @@ class CacheBuilder_Test extends TestCase {
             ->withConsecutive(
                 [static::equalTo(new Event('cache:get:start'))],
                 [static::callback(function(Event $event) : bool {
-                    if($event->getState() !== 'cache:get:error') {
+                    if($event->getName() !== 'cache:get:error') {
                         return false;
                     }
                     if(!isset($event->getData()['exception'])) {
@@ -457,7 +457,7 @@ class CacheBuilder_Test extends TestCase {
                 [static::equalTo(new Event('build:validation.pass'))],
                 [static::equalTo(new Event('cache:set:start'))],
                 [static::callback(function(Event $event) : bool {
-                    if($event->getState() !== 'cache:set:error') {
+                    if($event->getName() !== 'cache:set:error') {
                         return false;
                     }
                     if(!isset($event->getData()['exception'])) {

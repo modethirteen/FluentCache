@@ -20,6 +20,17 @@ use Exception;
 use Psr\EventDispatcher\StoppableEventInterface;
 
 class Event implements StoppableEventInterface {
+    const STATE_CACHE_GET_START = 'cache:get:start';
+    const STATE_CACHE_GET_ERROR = 'cache:get:error';
+    const STATE_CACHE_GET_STOP_HIT = 'cache:get:stop.hit';
+    const STATE_CACHE_GET_STOP_MISS = 'cache:get:stop.miss';
+    const STATE_BUILD_START = 'build:start';
+    const STATE_BUILD_STOP = 'build:stop';
+    const STATE_BUILD_VALIDATION_PASS = 'build:validation.pass';
+    const STATE_BUILD_VALIDATION_FAIL = 'build:validation.fail';
+    const STATE_CACHE_SET_START = 'cache:set:start';
+    const STATE_CACHE_SET_STOP = 'cache:set:stop';
+    const STATE_CACHE_SET_ERROR = 'cache:set:error';
 
     /**
      * @var bool
@@ -29,7 +40,7 @@ class Event implements StoppableEventInterface {
     /**
      * @var string
      */
-    private $state;
+    private $name;
 
     /**
      * @var array
@@ -37,10 +48,10 @@ class Event implements StoppableEventInterface {
     private $data = [];
 
     /**
-     * @param string $state
+     * @param string $name
      */
-    public function __construct(string $state) {
-        $this->state = $state;
+    public function __construct(string $name) {
+        $this->name = $name;
     }
 
     /**
@@ -53,8 +64,8 @@ class Event implements StoppableEventInterface {
     /**
      * @return string
      */
-    public function getState() : string {
-        return $this->state;
+    public function getName() : string {
+        return $this->name;
     }
 
     public function isPropagationStopped() : bool {
