@@ -16,8 +16,8 @@
  */
 namespace modethirteen\FluentCache;
 
-use Exception;
 use Psr\EventDispatcher\StoppableEventInterface;
+use Psr\SimpleCache\CacheException;
 
 class Event implements StoppableEventInterface {
     const STATE_CACHE_GET_START = 'cache:get:start';
@@ -73,12 +73,12 @@ class Event implements StoppableEventInterface {
     }
 
     /**
-     * @param Exception $e
+     * @param CacheException $e
      * @param bool $isPropagationStopped - should dispatcher halt sending event to downstream listeners
      * @see https://www.php-fig.org/psr/psr-14 for propagation handling
      * @return Event
      */
-    public function withException(Exception $e, bool $isPropagationStopped = false) : Event {
+    public function withException(CacheException $e, bool $isPropagationStopped = false) : Event {
         $event = clone $this;
         $event->data = ['exception' => $e];
         $event->isPropagationStopped = $isPropagationStopped;

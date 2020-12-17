@@ -18,8 +18,8 @@ namespace modethirteen\FluentCache;
 
 use Closure;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\SimpleCache\CacheException;
 use Psr\SimpleCache\CacheInterface;
-use Psr\SimpleCache\InvalidArgumentException;
 
 class CacheBuilder implements ICacheBuilder {
 
@@ -92,7 +92,7 @@ class CacheBuilder implements ICacheBuilder {
             $key = $this->getCacheKey();
             try {
                 $result = $key !== null ? $this->cache->get($key) : null;
-            } catch(InvalidArgumentException $e) {
+            } catch(CacheException $e) {
                 $dispatcher->dispatch(
                     (new Event(Event::STATE_CACHE_GET_ERROR))
                         ->withException($e)
@@ -127,7 +127,7 @@ class CacheBuilder implements ICacheBuilder {
                 try {
                     $this->cache->set($key, $result, $cacheLifespanBuilder($result));
                     $dispatcher->dispatch(new Event(Event::STATE_CACHE_SET_STOP));
-                } catch(InvalidArgumentException $e) {
+                } catch(CacheException $e) {
                     $dispatcher->dispatch(
                         (new Event(Event::STATE_CACHE_SET_ERROR))
                             ->withException($e)
