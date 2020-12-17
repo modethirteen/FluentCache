@@ -104,9 +104,10 @@ class CacheBuilder implements ICacheBuilder {
             try {
                 $result = $key !== null ? $this->cache->get($key) : null;
             } catch(InvalidArgumentException $e) {
-                $dispatcher->dispatch(new Event(self::STATE_CACHE_GET_ERROR, [
-                    'exception' => $e
-                ]));
+                $dispatcher->dispatch(
+                    (new Event(self::STATE_CACHE_GET_ERROR))
+                        ->withException($e)
+                );
                 $result = null;
             }
             $cacheValidator = $this->cacheValidator;
@@ -138,9 +139,10 @@ class CacheBuilder implements ICacheBuilder {
                     $this->cache->set($key, $result, $cacheLifespanBuilder($result));
                     $dispatcher->dispatch(new Event(self::STATE_CACHE_SET_STOP));
                 } catch(InvalidArgumentException $e) {
-                    $dispatcher->dispatch(new Event(self::STATE_CACHE_SET_ERROR, [
-                        'exception' => $e
-                    ]));
+                    $dispatcher->dispatch(
+                        (new Event(self::STATE_CACHE_SET_ERROR))
+                            ->withException($e)
+                    );
                 }
             }
         } else {

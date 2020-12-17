@@ -16,6 +16,7 @@
  */
 namespace modethirteen\FluentCache\Tests;
 
+use Exception;
 use modethirteen\FluentCache\Event;
 use PHPUnit\Framework\TestCase;
 
@@ -27,10 +28,43 @@ class Event_Test extends TestCase {
     public function Can_construct_an_event() : void {
 
         // act
-        $event = new Event('foo', ['bar' => 'baz']);
+        $event = new Event('foo');
 
         // assert
         static::assertEquals('foo', $event->getState());
-        static::assertEquals(['bar' => 'baz'], $event->getData());
+        static::assertEquals([], $event->getData());
+        static::assertFalse($event->isPropagationStopped());
+    }
+
+    /**
+     * @test
+     */
+    public function Can_construct_an_event_with_error_without_stopped_propagation() : void {
+
+        // act
+        $e = new Exception();
+        $event = (new Event('foo'))
+            ->withException($e);
+
+        // assert
+        static::assertEquals('foo', $event->getState());
+        static::assertEquals(['exception' => $e], $event->getData());
+        static::assertFalse($event->isPropagationStopped());
+    }
+
+    /**
+     * @test
+     */
+    public function Can_construct_an_event_with_error_with_stopped_propagation() : void {
+
+        // act
+        $e = new Exception();
+        $event = (new Event('foo'))
+            ->withException($e, true);
+
+        // assert
+        static::assertEquals('foo', $event->getState());
+        static::assertEquals(['exception' => $e], $event->getData());
+        static::assertTrue($event->isPropagationStopped());
     }
 }

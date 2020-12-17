@@ -16,7 +16,15 @@
  */
 namespace modethirteen\FluentCache;
 
-class Event {
+use Exception;
+use Psr\EventDispatcher\StoppableEventInterface;
+
+class Event implements StoppableEventInterface {
+
+    /**
+     * @var bool
+     */
+    private $isPropagationStopped = false;
 
     /**
      * @var string
@@ -26,15 +34,13 @@ class Event {
     /**
      * @var array
      */
-    private $data;
+    private $data = [];
 
     /**
      * @param string $state
-     * @param array $data
      */
-    public function __construct(string $state, array $data = []) {
+    public function __construct(string $state) {
         $this->state = $state;
-        $this->data = $data;
     }
 
     /**
@@ -49,5 +55,22 @@ class Event {
      */
     public function getState() : string {
         return $this->state;
+    }
+
+    public function isPropagationStopped() : bool {
+        return $this->isPropagationStopped;
+    }
+
+    /**
+     * @param Exception $e
+     * @param bool $isPropagationStopped - should dispatcher halt sending event to downstream listeners
+     * @see https://www.php-fig.org/psr/psr-14 for propagation handling
+     * @return Event
+     */
+    public function withException(Exception $e, bool $isPropagationStopped = false) : Event {
+        $event = clone $this;
+        $event->data = ['exception' => $e];
+        $event->isPropagationStopped = $isPropagationStopped;
+        return $event;
     }
 }

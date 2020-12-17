@@ -24,6 +24,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\InvalidArgumentException;
 
 class CacheBuilder_Test extends TestCase {
 
@@ -338,7 +339,21 @@ class CacheBuilder_Test extends TestCase {
             ->method('dispatch')
             ->withConsecutive(
                 [static::equalTo(new Event('cache:get:start'))],
-                [static::equalTo(new Event('cache:get:error', ['exception' => new CacheException()]))],
+                [static::callback(function(Event $event) : bool {
+                    if($event->getState() !== 'cache:get:error') {
+                        return false;
+                    }
+                    if(!isset($event->getData()['exception'])) {
+                        return false;
+                    }
+                    if(!($event->getData()['exception'] instanceof InvalidArgumentException)) {
+                        return false;
+                    }
+                    if($event->isPropagationStopped()) {
+                        return false;
+                    }
+                    return true;
+                })],
                 [static::equalTo(new Event('cache:get:stop.miss'))]
             );
         $cache = $this->newMock(CacheInterface::class);
@@ -376,7 +391,21 @@ class CacheBuilder_Test extends TestCase {
             ->method('dispatch')
             ->withConsecutive(
                 [static::equalTo(new Event('cache:get:start'))],
-                [static::equalTo(new Event('cache:get:error', ['exception' => new CacheException()]))],
+                [static::callback(function(Event $event) : bool {
+                    if($event->getState() !== 'cache:get:error') {
+                        return false;
+                    }
+                    if(!isset($event->getData()['exception'])) {
+                        return false;
+                    }
+                    if(!($event->getData()['exception'] instanceof InvalidArgumentException)) {
+                        return false;
+                    }
+                    if($event->isPropagationStopped()) {
+                        return false;
+                    }
+                    return true;
+                })],
                 [static::equalTo(new Event('cache:get:stop.miss'))],
                 [static::equalTo(new Event('build:start'))],
                 [static::equalTo(new Event('build:stop'))],
@@ -427,7 +456,21 @@ class CacheBuilder_Test extends TestCase {
                 [static::equalTo(new Event('build:stop'))],
                 [static::equalTo(new Event('build:validation.pass'))],
                 [static::equalTo(new Event('cache:set:start'))],
-                [static::equalTo(new Event('cache:set:error', ['exception' => new CacheException()]))]
+                [static::callback(function(Event $event) : bool {
+                    if($event->getState() !== 'cache:set:error') {
+                        return false;
+                    }
+                    if(!isset($event->getData()['exception'])) {
+                        return false;
+                    }
+                    if(!($event->getData()['exception'] instanceof InvalidArgumentException)) {
+                        return false;
+                    }
+                    if($event->isPropagationStopped()) {
+                        return false;
+                    }
+                    return true;
+                })]
             );
         $cache = $this->newMock(CacheInterface::class);
 
