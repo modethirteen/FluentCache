@@ -20,17 +20,17 @@ use Psr\EventDispatcher\StoppableEventInterface;
 use Psr\SimpleCache\CacheException;
 
 class Event implements StoppableEventInterface {
-    const STATE_CACHE_GET_START = 'cache:get:start';
-    const STATE_CACHE_GET_ERROR = 'cache:get:error';
-    const STATE_CACHE_GET_STOP_HIT = 'cache:get:stop.hit';
-    const STATE_CACHE_GET_STOP_MISS = 'cache:get:stop.miss';
-    const STATE_BUILD_START = 'build:start';
-    const STATE_BUILD_STOP = 'build:stop';
-    const STATE_BUILD_VALIDATION_PASS = 'build:validation.pass';
-    const STATE_BUILD_VALIDATION_FAIL = 'build:validation.fail';
-    const STATE_CACHE_SET_START = 'cache:set:start';
-    const STATE_CACHE_SET_STOP = 'cache:set:stop';
-    const STATE_CACHE_SET_ERROR = 'cache:set:error';
+    const CACHE_GET_START = 'cache:get:start';
+    const CACHE_GET_ERROR = 'cache:get:error';
+    const CACHE_GET_STOP_HIT = 'cache:get:stop.hit';
+    const CACHE_GET_STOP_MISS = 'cache:get:stop.miss';
+    const BUILD_START = 'build:start';
+    const BUILD_STOP = 'build:stop';
+    const BUILD_VALIDATION_PASS = 'build:validation.pass';
+    const BUILD_VALIDATION_FAIL = 'build:validation.fail';
+    const CACHE_SET_START = 'cache:set:start';
+    const CACHE_SET_STOP = 'cache:set:stop';
+    const CACHE_SET_ERROR = 'cache:set:error';
 
     /**
      * @var bool

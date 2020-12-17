@@ -87,14 +87,14 @@ class CacheBuilder implements ICacheBuilder {
         $dispatcher = $this->dispatcher;
         if($this->getCache() !== null) {
             if($dispatcher !== null) {
-                $dispatcher->dispatch(new Event(Event::STATE_CACHE_GET_START));
+                $dispatcher->dispatch(new Event(Event::CACHE_GET_START));
             }
             $key = $this->getCacheKey();
             try {
                 $result = $key !== null ? $this->cache->get($key) : null;
             } catch(CacheException $e) {
                 $dispatcher->dispatch(
-                    (new Event(Event::STATE_CACHE_GET_ERROR))
+                    (new Event(Event::CACHE_GET_ERROR))
                         ->withException($e)
                 );
                 $result = null;
@@ -102,40 +102,40 @@ class CacheBuilder implements ICacheBuilder {
             $cacheValidator = $this->cacheValidator;
             if($cacheValidator($result) === true) {
                 if($dispatcher !== null) {
-                    $dispatcher->dispatch(new Event(Event::STATE_CACHE_GET_STOP_HIT));
+                    $dispatcher->dispatch(new Event(Event::CACHE_GET_STOP_HIT));
                 }
                 return $result;
             }
             if($dispatcher !== null) {
-                $dispatcher->dispatch(new Event(Event::STATE_CACHE_GET_STOP_MISS));
+                $dispatcher->dispatch(new Event(Event::CACHE_GET_STOP_MISS));
             }
         }
         if($this->builder === null) {
             return null;
         }
-        $dispatcher->dispatch(new Event(Event::STATE_BUILD_START));
+        $dispatcher->dispatch(new Event(Event::BUILD_START));
         $builder = $this->builder;
         $result = $builder();
-        $dispatcher->dispatch(new Event(Event::STATE_BUILD_STOP));
+        $dispatcher->dispatch(new Event(Event::BUILD_STOP));
         $buildValidator = $this->buildValidator;
         if($buildValidator($result) === true) {
-            $dispatcher->dispatch(new Event(Event::STATE_BUILD_VALIDATION_PASS));
+            $dispatcher->dispatch(new Event(Event::BUILD_VALIDATION_PASS));
             $key = $this->getCacheKey();
             if($this->getCache() !== null && $key !== null) {
                 $cacheLifespanBuilder = $this->cacheLifespanBuilder;
-                $dispatcher->dispatch(new Event(Event::STATE_CACHE_SET_START));
+                $dispatcher->dispatch(new Event(Event::CACHE_SET_START));
                 try {
                     $this->cache->set($key, $result, $cacheLifespanBuilder($result));
-                    $dispatcher->dispatch(new Event(Event::STATE_CACHE_SET_STOP));
+                    $dispatcher->dispatch(new Event(Event::CACHE_SET_STOP));
                 } catch(CacheException $e) {
                     $dispatcher->dispatch(
-                        (new Event(Event::STATE_CACHE_SET_ERROR))
+                        (new Event(Event::CACHE_SET_ERROR))
                             ->withException($e)
                     );
                 }
             }
         } else {
-            $dispatcher->dispatch(new Event(Event::STATE_BUILD_VALIDATION_FAIL));
+            $dispatcher->dispatch(new Event(Event::BUILD_VALIDATION_FAIL));
         }
         return $result;
     }
