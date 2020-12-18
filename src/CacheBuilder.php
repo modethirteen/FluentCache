@@ -130,6 +130,10 @@ class CacheBuilder implements ICacheBuilder {
         $buildValidator = $this->buildValidator;
         if($buildValidator($result) === true) {
             $this->dispatch(new Event(Event::BUILD_VALIDATION_SUCCESS));
+
+            // the cache key used for setting a value may be different than the key used to get a value if upstream
+            // ...dependencies and state have changed - to be safe, we regenerate the key
+            $this->cacheKey = null;
             $key = $this->getCacheKey();
             if($this->getCache() !== null && $key !== null) {
                 $cacheLifespanBuilder = $this->cacheLifespanBuilder;

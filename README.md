@@ -34,3 +34,9 @@ Or add modethirteen/fluent-cache to your project's composer.json:
 `dev-main` is the main development branch. If you are using FluentCache in a production environment, it is advised that you use a stable release.
 
 Assuming you have setup Composer's autoloader, FluentCache can be found in the `modethirteen\FluentCache\` namespace.
+
+## Usage
+
+```php
+
+```

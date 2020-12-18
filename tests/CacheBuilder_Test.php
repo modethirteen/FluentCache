@@ -397,6 +397,72 @@ class CacheBuilder_Test extends TestCase {
      * @dataProvider isLazyDispatcherEnabled_Provider
      * @param bool $isLazyDispatcherEnabled
      */
+    public function Cache_hit_fails_validation_with_build_and_updated_cache_key(bool $isLazyDispatcherEnabled) : void {
+
+        // arrange
+        $cache = $this->newMock(CacheInterface::class);
+
+        /** @noinspection PhpParamsInspection */
+        $cache->expects($this->once())
+            ->method('get')
+            ->with(static::equalTo('foo'))
+            ->willReturn('fred');
+
+        /** @noinspection PhpParamsInspection */
+        $cache->expects($this->once())
+            ->method('set')
+            ->with(static::equalTo('bar'), static::equalTo('xyzzy'), static::equalTo(0))
+            ->willReturn(true);
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(8))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:get.hit'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:validation.fail'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:stop'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:validation.success'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.start'))->withCache($cache, 'bar'))],
+                [static::equalTo((new Event('cache:set.success'))->withCache($cache, 'bar'))]
+            );
+        $key = 'foo';
+
+        // act
+        $builder = (new CacheBuilder())
+            ->withBuilder(function() use (&$key) : string {
+                $key = 'bar';
+                return 'xyzzy';
+            })
+            ->withCache($cache, function() use (&$key) : string {
+                return $key;
+            })
+            ->withCacheValidator(function($result) : bool {
+
+                // assert
+                static::assertEquals('fred', $result);
+                return false;
+            });
+
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
+
+        // assert
+        static::assertEquals('xyzzy', $result);
+    }
+
+    /**
+     * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
+     */
     public function Handles_cache_get_error(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
