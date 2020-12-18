@@ -64,6 +64,11 @@ class CacheBuilder implements ICacheBuilder {
     private $dispatcher = null;
 
     /**
+     * @var Closure
+     */
+    private $lazyDispatcher;
+
+    /**
      * Creates an instance with a simple build/cache validators that check results for null
      *
      * @note it is intended that references in this instance are maintained when the instance is cloned
@@ -81,14 +86,18 @@ class CacheBuilder implements ICacheBuilder {
         $this->cacheValidator = function($result) : bool {
             return $result !== null;
         };
+        $this->lazyDispatcher = function() : EventDispatcherInterface {
+            return new class implements EventDispatcherInterface {
+                public function dispatch(object $event) {
+                }
+            };
+        };
     }
 
     public function get() {
-        $dispatcher = $this->dispatcher;
+        $dispatcher = $this->getDispatcher();
         if($this->getCache() !== null) {
-            if($dispatcher !== null) {
-                $dispatcher->dispatch(new Event(Event::CACHE_GET_START));
-            }
+            $dispatcher->dispatch(new Event(Event::CACHE_GET_START));
             $key = $this->getCacheKey();
             try {
                 $result = $key !== null ? $this->cache->get($key) : null;
@@ -101,14 +110,10 @@ class CacheBuilder implements ICacheBuilder {
             }
             $cacheValidator = $this->cacheValidator;
             if($cacheValidator($result) === true) {
-                if($dispatcher !== null) {
-                    $dispatcher->dispatch(new Event(Event::CACHE_GET_STOP_HIT));
-                }
+                $dispatcher->dispatch(new Event(Event::CACHE_GET_STOP_HIT));
                 return $result;
             }
-            if($dispatcher !== null) {
-                $dispatcher->dispatch(new Event(Event::CACHE_GET_STOP_MISS));
-            }
+            $dispatcher->dispatch(new Event(Event::CACHE_GET_STOP_MISS));
         }
         if($this->builder === null) {
             return null;
@@ -186,6 +191,25 @@ class CacheBuilder implements ICacheBuilder {
     public function withEventDispatcher(EventDispatcherInterface $dispatcher) : ICacheBuilder {
         $instance = clone $this;
         $instance->dispatcher = $dispatcher;
+        $instance->lazyDispatcher = null;
         return $instance;
+    }
+
+    public function withLazyEventDispatcher(Closure $dispatcher) : ICacheBuilder {
+        $instance = clone $this;
+        $instance->dispatcher = null;
+        $instance->lazyDispatcher = $dispatcher;
+        return $instance;
+    }
+
+    /**
+     * @return EventDispatcherInterface|null
+     */
+    private function getDispatcher() : ?EventDispatcherInterface {
+        if($this->dispatcher === null) {
+            $func = $this->lazyDispatcher;
+            $this->dispatcher = $func($this);
+        }
+        return $this->dispatcher;
     }
 }

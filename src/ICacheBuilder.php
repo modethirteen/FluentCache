@@ -73,4 +73,10 @@ interface ICacheBuilder {
      * @return ICacheBuilder
      */
     function withEventDispatcher(EventDispatcherInterface $dispatcher) : ICacheBuilder;
+
+    /**
+     * @param Closure $dispatcher - <$dispatcher(ICacheBuilder $this) : EventDispatcherInterface> : initializes dispatcher when `get` method is called
+     * @return ICacheBuilder
+     */
+    function withLazyEventDispatcher(Closure $dispatcher) : ICacheBuilder;
 }

@@ -20,6 +20,7 @@ namespace modethirteen\FluentCache\Tests;
 
 use modethirteen\FluentCache\CacheBuilder;
 use modethirteen\FluentCache\Event;
+use modethirteen\FluentCache\ICacheBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -29,9 +30,21 @@ use Psr\SimpleCache\InvalidArgumentException;
 class CacheBuilder_Test extends TestCase {
 
     /**
+     * @return array
+     */
+    public static function isLazyDispatcherEnabled_Provider() : array {
+        return [
+            'with lazy dispatcher' => [true],
+            'without lazy dispatcher' => [false]
+        ];
+    }
+
+    /**
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      * @test
      */
-    public function Build() : void {
+    public function Build(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -44,23 +57,29 @@ class CacheBuilder_Test extends TestCase {
             );
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'qux';
-            })
+            });
 
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
 
         // assert
         static::assertEquals('qux', $result);
     }
 
     /**
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      * @test
      */
-    public function Build_failed() : void {
+    public function Build_failed(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -73,7 +92,7 @@ class CacheBuilder_Test extends TestCase {
             );
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'qux';
             })
@@ -82,11 +101,15 @@ class CacheBuilder_Test extends TestCase {
                 // assert
                 static::assertEquals('qux', $result);
                 return false;
-            })
+            });
 
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+             /** @var EventDispatcherInterface $dispatcher */
+            $builder = $isLazyDispatcherEnabled
+                ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                    static::assertInstanceOf(ICacheBuilder::class, $instance);
+                    return $dispatcher;
+                }) : $builder->withEventDispatcher($dispatcher);
+            $result = $builder->get();
 
         // assert
         static::assertEquals('qux', $result);
@@ -94,8 +117,10 @@ class CacheBuilder_Test extends TestCase {
 
     /**
      * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      */
-    public function Cache_hit() : void {
+    public function Cache_hit(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -114,16 +139,20 @@ class CacheBuilder_Test extends TestCase {
             ->willReturn('bar');
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
 
             /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
-            })
+            });
 
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
 
         // assert
         static::assertEquals('bar', $result);
@@ -131,8 +160,10 @@ class CacheBuilder_Test extends TestCase {
 
     /**
      * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      */
-    public function Cache_miss_with_build() : void {
+    public function Cache_miss_with_build(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -161,7 +192,7 @@ class CacheBuilder_Test extends TestCase {
             ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(0));
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'qux';
             })
@@ -169,11 +200,15 @@ class CacheBuilder_Test extends TestCase {
             /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
-            })
+            });
 
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
 
         // assert
         static::assertEquals('qux', $result);
@@ -181,8 +216,10 @@ class CacheBuilder_Test extends TestCase {
 
     /**
      * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      */
-    public function Cache_miss_with_build_and_ttl() : void {
+    public function Cache_miss_with_build_and_ttl(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -211,7 +248,7 @@ class CacheBuilder_Test extends TestCase {
             ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(1500));
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'qux';
             })
@@ -225,11 +262,15 @@ class CacheBuilder_Test extends TestCase {
                 // assert
                 static::assertEquals('qux', $result);
                 return 1500;
-            })
+            });
 
             /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+            $builder = $isLazyDispatcherEnabled
+                ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                    static::assertInstanceOf(ICacheBuilder::class, $instance);
+                    return $dispatcher;
+                }) : $builder->withEventDispatcher($dispatcher);
+            $result = $builder->get();
 
         // assert
         static::assertEquals('qux', $result);
@@ -237,8 +278,10 @@ class CacheBuilder_Test extends TestCase {
 
     /**
      * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      */
-    public function Cache_miss_without_build() : void {
+    public function Cache_miss_without_build(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -257,16 +300,20 @@ class CacheBuilder_Test extends TestCase {
             ->willReturn(null);
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
 
             /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
-            })
+            });
 
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
 
         // assert
         static::assertNull($result);
@@ -274,8 +321,10 @@ class CacheBuilder_Test extends TestCase {
 
     /**
      * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      */
-    public function Cache_hit_fails_validation_with_build() : void {
+    public function Cache_hit_fails_validation_with_build(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -304,7 +353,7 @@ class CacheBuilder_Test extends TestCase {
             ->with(static::equalTo('foo'), static::equalTo('xyzzy'), static::equalTo(0));
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'xyzzy';
             })
@@ -318,11 +367,15 @@ class CacheBuilder_Test extends TestCase {
                 // assert
                 static::assertEquals('fred', $result);
                 return false;
-            })
+            });
 
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
 
         // assert
         static::assertEquals('xyzzy', $result);
@@ -330,8 +383,10 @@ class CacheBuilder_Test extends TestCase {
 
     /**
      * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      */
-    public function Handles_cache_get_error() : void {
+    public function Handles_cache_get_error(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -365,16 +420,20 @@ class CacheBuilder_Test extends TestCase {
             ->willThrowException(new CacheException());
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
 
             /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
-            })
+            });
 
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
 
         // assert
         static::assertNull($result);
@@ -382,8 +441,10 @@ class CacheBuilder_Test extends TestCase {
 
     /**
      * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      */
-    public function Handles_cache_get_error_and_builds() : void {
+    public function Handles_cache_get_error_and_builds(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -422,7 +483,7 @@ class CacheBuilder_Test extends TestCase {
             ->willThrowException(new CacheException());
 
         // act
-        $result = (new CacheBuilder())
+        $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'plugh';
             })
@@ -430,11 +491,15 @@ class CacheBuilder_Test extends TestCase {
             /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
-            })
+            });
 
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
-            ->get();
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
 
         // assert
         static::assertEquals('plugh', $result);
@@ -442,8 +507,10 @@ class CacheBuilder_Test extends TestCase {
 
     /**
      * @test
+     * @dataProvider isLazyDispatcherEnabled_Provider
+     * @param bool $isLazyDispatcherEnabled
      */
-    public function Handles_cache_set_error() : void {
+    public function Handles_cache_set_error(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
         $dispatcher = $this->newMock(EventDispatcherInterface::class);
@@ -487,6 +554,91 @@ class CacheBuilder_Test extends TestCase {
             ->willThrowException(new CacheException());
 
         // act
+        $builder = (new CacheBuilder())
+            ->withBuilder(function() : string {
+                return 'qux';
+            })
+
+            /** @var CacheInterface $cache */
+            ->withCache($cache, function() : string {
+                return 'foo';
+            });
+
+        /** @var EventDispatcherInterface $dispatcher */
+        $builder = $isLazyDispatcherEnabled
+            ? $builder->withLazyEventDispatcher(function($instance) use ($builder, $dispatcher) : EventDispatcherInterface {
+                static::assertInstanceOf(ICacheBuilder::class, $instance);
+                return $dispatcher;
+            }) : $builder->withEventDispatcher($dispatcher);
+        $result = $builder->get();
+
+        // assert
+        static::assertEquals('qux', $result);
+    }
+
+    /**
+     * @test
+     */
+    public function Build_without_event_dispatcher() : void {
+
+        // act
+        $result = (new CacheBuilder())
+            ->withBuilder(function() : string {
+                return 'qux';
+            })
+            ->get();
+
+        // assert
+        static::assertEquals('qux', $result);
+    }
+
+    /**
+     * @test
+     */
+    public function Cache_hit_without_event_dispatcher() : void {
+
+        // arrange
+        $cache = $this->newMock(CacheInterface::class);
+
+        /** @noinspection PhpParamsInspection */
+        $cache->expects($this->once())
+            ->method('get')
+            ->with(static::equalTo('foo'))
+            ->willReturn('bar');
+
+        // act
+        $result = (new CacheBuilder())
+
+            /** @var CacheInterface $cache */
+            ->withCache($cache, function() : string {
+                return 'foo';
+            })
+            ->get();
+
+        // assert
+        static::assertEquals('bar', $result);
+    }
+
+    /**
+     * @test
+     */
+    public function Cache_miss_with_build_without_event_dispatcher() : void {
+
+        // arrange
+        $cache = $this->newMock(CacheInterface::class);
+
+        /** @noinspection PhpParamsInspection */
+        $cache->expects($this->once())
+            ->method('get')
+            ->with(static::equalTo('foo'))
+            ->willReturn(null);
+
+        /** @noinspection PhpParamsInspection */
+        $cache->expects($this->once())
+            ->method('set')
+            ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(0));
+
+        // act
         $result = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'qux';
@@ -496,9 +648,6 @@ class CacheBuilder_Test extends TestCase {
             ->withCache($cache, function() : string {
                 return 'foo';
             })
-
-            /** @var EventDispatcherInterface $dispatcher */
-            ->withEventDispatcher($dispatcher)
             ->get();
 
         // assert
