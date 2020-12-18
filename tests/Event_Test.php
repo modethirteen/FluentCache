@@ -17,7 +17,7 @@
 namespace modethirteen\FluentCache\Tests;
 
 use modethirteen\FluentCache\Event;
-use PHPUnit\Framework\TestCase;
+use Psr\SimpleCache\CacheInterface;
 
 class Event_Test extends TestCase {
 
@@ -30,40 +30,49 @@ class Event_Test extends TestCase {
         $event = new Event('foo');
 
         // assert
-        static::assertEquals('foo', $event->getName());
-        static::assertEquals([], $event->getData());
+        static::assertEquals('foo', $event->getMessage());
+        static::assertNull($event->getCacheKey());
+        static::assertNull($event->getCacheType());
+        static::assertNull($event->getException());
         static::assertFalse($event->isPropagationStopped());
     }
 
     /**
      * @test
      */
-    public function Can_construct_an_event_with_error_without_stopped_propagation() : void {
+    public function Can_construct_an_event_with_optional_data() : void {
+
+        // arrange
+        $cache = $this->newMock(CacheInterface::class);
 
         // act
         $e = new CacheException();
         $event = (new Event('foo'))
+
+            /** @var CacheInterface $cache */
+            ->withCache($cache, 'qux')
             ->withException($e);
 
         // assert
-        static::assertEquals('foo', $event->getName());
-        static::assertEquals(['exception' => $e], $event->getData());
+        static::assertEquals('foo', $event->getMessage());
+        static::assertEquals('qux', $event->getCacheKey());
+        static::assertStringStartsWith('Mock_CacheInterface_', $event->getCacheType());
+        static::assertSame($e, $event->getException());
         static::assertFalse($event->isPropagationStopped());
     }
 
     /**
      * @test
      */
-    public function Can_construct_an_event_with_error_with_stopped_propagation() : void {
+    public function Can_stop_propagation() : void {
+
+        // arrange
+        $event = (new Event('foo'));
 
         // act
-        $e = new CacheException();
-        $event = (new Event('foo'))
-            ->withException($e, true);
+        $event->stopPropagation();;
 
         // assert
-        static::assertEquals('foo', $event->getName());
-        static::assertEquals(['exception' => $e], $event->getData());
         static::assertTrue($event->isPropagationStopped());
     }
 }

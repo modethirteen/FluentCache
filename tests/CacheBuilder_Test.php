@@ -21,11 +21,17 @@ namespace modethirteen\FluentCache\Tests;
 use modethirteen\FluentCache\CacheBuilder;
 use modethirteen\FluentCache\Event;
 use modethirteen\FluentCache\ICacheBuilder;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
+
+class Foo implements EventDispatcherInterface {
+
+    public function dispatch(object $event)
+    {
+        var_dump($event->getMessage());
+    }
+}
 
 class CacheBuilder_Test extends TestCase {
 
@@ -53,7 +59,7 @@ class CacheBuilder_Test extends TestCase {
             ->withConsecutive(
                 [static::equalTo(new Event('build:start'))],
                 [static::equalTo(new Event('build:stop'))],
-                [static::equalTo(new Event('build:validation.pass'))]
+                [static::equalTo(new Event('build:validation.success'))]
             );
 
         // act
@@ -123,13 +129,6 @@ class CacheBuilder_Test extends TestCase {
     public function Cache_hit(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
-        $dispatcher = $this->newMock(EventDispatcherInterface::class);
-        $dispatcher->expects($this->exactly(2))
-            ->method('dispatch')
-            ->withConsecutive(
-                [static::equalTo(new Event('cache:get:start'))],
-                [static::equalTo(new Event('cache:get:stop.hit'))]
-            );
         $cache = $this->newMock(CacheInterface::class);
 
         /** @noinspection PhpParamsInspection */
@@ -137,11 +136,19 @@ class CacheBuilder_Test extends TestCase {
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willReturn('bar');
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(3))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:get.hit'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:validation.success'))->withCache($cache, 'foo'))]
+            );
 
         // act
         $builder = (new CacheBuilder())
-
-            /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
             });
@@ -166,18 +173,6 @@ class CacheBuilder_Test extends TestCase {
     public function Cache_miss_with_build(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
-        $dispatcher = $this->newMock(EventDispatcherInterface::class);
-        $dispatcher->expects($this->exactly(7))
-            ->method('dispatch')
-            ->withConsecutive(
-                [static::equalTo(new Event('cache:get:start'))],
-                [static::equalTo(new Event('cache:get:stop.miss'))],
-                [static::equalTo(new Event('build:start'))],
-                [static::equalTo(new Event('build:stop'))],
-                [static::equalTo(new Event('build:validation.pass'))],
-                [static::equalTo(new Event('cache:set:start'))],
-                [static::equalTo(new Event('cache:set:stop'))]
-            );
         $cache = $this->newMock(CacheInterface::class);
 
         /** @noinspection PhpParamsInspection */
@@ -189,15 +184,28 @@ class CacheBuilder_Test extends TestCase {
         /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
-            ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(0));
+            ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(0))
+            ->willReturn(true);
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(7))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:get.miss'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:stop'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:validation.success'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.success'))->withCache($cache, 'foo'))]
+            );
 
         // act
         $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'qux';
             })
-
-            /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
             });
@@ -222,18 +230,6 @@ class CacheBuilder_Test extends TestCase {
     public function Cache_miss_with_build_and_ttl(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
-        $dispatcher = $this->newMock(EventDispatcherInterface::class);
-        $dispatcher->expects($this->exactly(7))
-            ->method('dispatch')
-            ->withConsecutive(
-                [static::equalTo(new Event('cache:get:start'))],
-                [static::equalTo(new Event('cache:get:stop.miss'))],
-                [static::equalTo(new Event('build:start'))],
-                [static::equalTo(new Event('build:stop'))],
-                [static::equalTo(new Event('build:validation.pass'))],
-                [static::equalTo(new Event('cache:set:start'))],
-                [static::equalTo(new Event('cache:set:stop'))]
-            );
         $cache = $this->newMock(CacheInterface::class);
 
         /** @noinspection PhpParamsInspection */
@@ -245,15 +241,28 @@ class CacheBuilder_Test extends TestCase {
         /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
-            ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(1500));
+            ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(1500))
+            ->willReturn(true);
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(7))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:get.miss'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:stop'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:validation.success'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.success'))->withCache($cache, 'foo'))]
+            );
 
         // act
         $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'qux';
             })
-
-            /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
             })
@@ -284,13 +293,6 @@ class CacheBuilder_Test extends TestCase {
     public function Cache_miss_without_build(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
-        $dispatcher = $this->newMock(EventDispatcherInterface::class);
-        $dispatcher->expects($this->exactly(2))
-            ->method('dispatch')
-            ->withConsecutive(
-                [static::equalTo(new Event('cache:get:start'))],
-                [static::equalTo(new Event('cache:get:stop.miss'))]
-            );
         $cache = $this->newMock(CacheInterface::class);
 
         /** @noinspection PhpParamsInspection */
@@ -298,11 +300,18 @@ class CacheBuilder_Test extends TestCase {
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willReturn(null);
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(2))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:get.miss'))->withCache($cache, 'foo'))]
+            );
 
         // act
         $builder = (new CacheBuilder())
-
-            /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
             });
@@ -327,18 +336,6 @@ class CacheBuilder_Test extends TestCase {
     public function Cache_hit_fails_validation_with_build(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
-        $dispatcher = $this->newMock(EventDispatcherInterface::class);
-        $dispatcher->expects($this->exactly(7))
-            ->method('dispatch')
-            ->withConsecutive(
-                [static::equalTo(new Event('cache:get:start'))],
-                [static::equalTo(new Event('cache:get:stop.miss'))],
-                [static::equalTo(new Event('build:start'))],
-                [static::equalTo(new Event('build:stop'))],
-                [static::equalTo(new Event('build:validation.pass'))],
-                [static::equalTo(new Event('cache:set:start'))],
-                [static::equalTo(new Event('cache:set:stop'))]
-            );
         $cache = $this->newMock(CacheInterface::class);
 
         /** @noinspection PhpParamsInspection */
@@ -350,15 +347,29 @@ class CacheBuilder_Test extends TestCase {
         /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
-            ->with(static::equalTo('foo'), static::equalTo('xyzzy'), static::equalTo(0));
+            ->with(static::equalTo('foo'), static::equalTo('xyzzy'), static::equalTo(0))
+            ->willReturn(true);
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(8))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:get.hit'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:validation.fail'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:stop'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:validation.success'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.success'))->withCache($cache, 'foo'))]
+            );
 
         // act
         $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'xyzzy';
             })
-
-            /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
             })
@@ -389,28 +400,6 @@ class CacheBuilder_Test extends TestCase {
     public function Handles_cache_get_error(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
-        $dispatcher = $this->newMock(EventDispatcherInterface::class);
-        $dispatcher->expects($this->exactly(3))
-            ->method('dispatch')
-            ->withConsecutive(
-                [static::equalTo(new Event('cache:get:start'))],
-                [static::callback(function(Event $event) : bool {
-                    if($event->getName() !== 'cache:get:error') {
-                        return false;
-                    }
-                    if(!isset($event->getData()['exception'])) {
-                        return false;
-                    }
-                    if(!($event->getData()['exception'] instanceof InvalidArgumentException)) {
-                        return false;
-                    }
-                    if($event->isPropagationStopped()) {
-                        return false;
-                    }
-                    return true;
-                })],
-                [static::equalTo(new Event('cache:get:stop.miss'))]
-            );
         $cache = $this->newMock(CacheInterface::class);
 
         /** @noinspection PhpParamsInspection */
@@ -418,11 +407,30 @@ class CacheBuilder_Test extends TestCase {
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willThrowException(new CacheException());
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(3))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::callback(function(Event $event) : bool {
+                    if($event->getMessage() !== 'cache:get.error') {
+                        return false;
+                    }
+                    if(!($event->getException() instanceof InvalidArgumentException)) {
+                        return false;
+                    }
+                    if($event->isPropagationStopped()) {
+                        return false;
+                    }
+                    return true;
+                })],
+                [static::equalTo((new Event('cache:get.miss'))->withCache($cache, 'foo'))]
+            );
 
         // act
         $builder = (new CacheBuilder())
-
-            /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
             });
@@ -447,33 +455,6 @@ class CacheBuilder_Test extends TestCase {
     public function Handles_cache_get_error_and_builds(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
-        $dispatcher = $this->newMock(EventDispatcherInterface::class);
-        $dispatcher->expects($this->exactly(8))
-            ->method('dispatch')
-            ->withConsecutive(
-                [static::equalTo(new Event('cache:get:start'))],
-                [static::callback(function(Event $event) : bool {
-                    if($event->getName() !== 'cache:get:error') {
-                        return false;
-                    }
-                    if(!isset($event->getData()['exception'])) {
-                        return false;
-                    }
-                    if(!($event->getData()['exception'] instanceof InvalidArgumentException)) {
-                        return false;
-                    }
-                    if($event->isPropagationStopped()) {
-                        return false;
-                    }
-                    return true;
-                })],
-                [static::equalTo(new Event('cache:get:stop.miss'))],
-                [static::equalTo(new Event('build:start'))],
-                [static::equalTo(new Event('build:stop'))],
-                [static::equalTo(new Event('build:validation.pass'))],
-                [static::equalTo(new Event('cache:set:start'))],
-                [static::equalTo(new Event('cache:set:stop'))]
-            );
         $cache = $this->newMock(CacheInterface::class);
 
         /** @noinspection PhpParamsInspection */
@@ -482,13 +463,43 @@ class CacheBuilder_Test extends TestCase {
             ->with(static::equalTo('foo'))
             ->willThrowException(new CacheException());
 
+        /** @noinspection PhpParamsInspection */
+        $cache->expects($this->once())
+            ->method('set')
+            ->with(static::equalTo('foo'), static::equalTo('plugh'), static::equalTo(0))
+            ->willReturn(true);
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(8))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::callback(function(Event $event) : bool {
+                    if($event->getMessage() !== 'cache:get.error') {
+                        return false;
+                    }
+                    if(!($event->getException() instanceof InvalidArgumentException)) {
+                        return false;
+                    }
+                    if($event->isPropagationStopped()) {
+                        return false;
+                    }
+                    return true;
+                })],
+                [static::equalTo((new Event('cache:get.miss'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:stop'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:validation.success'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.success'))->withCache($cache, 'foo'))]
+            );
+
         // act
         $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'plugh';
             })
-
-            /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
             });
@@ -513,32 +524,6 @@ class CacheBuilder_Test extends TestCase {
     public function Handles_cache_set_error(bool $isLazyDispatcherEnabled) : void {
 
         // arrange
-        $dispatcher = $this->newMock(EventDispatcherInterface::class);
-        $dispatcher->expects($this->exactly(7))
-            ->method('dispatch')
-            ->withConsecutive(
-                [static::equalTo(new Event('cache:get:start'))],
-                [static::equalTo(new Event('cache:get:stop.miss'))],
-                [static::equalTo(new Event('build:start'))],
-                [static::equalTo(new Event('build:stop'))],
-                [static::equalTo(new Event('build:validation.pass'))],
-                [static::equalTo(new Event('cache:set:start'))],
-                [static::callback(function(Event $event) : bool {
-                    if($event->getName() !== 'cache:set:error') {
-                        return false;
-                    }
-                    if(!isset($event->getData()['exception'])) {
-                        return false;
-                    }
-                    if(!($event->getData()['exception'] instanceof InvalidArgumentException)) {
-                        return false;
-                    }
-                    if($event->isPropagationStopped()) {
-                        return false;
-                    }
-                    return true;
-                })]
-            );
         $cache = $this->newMock(CacheInterface::class);
 
         /** @noinspection PhpParamsInspection */
@@ -552,14 +537,37 @@ class CacheBuilder_Test extends TestCase {
             ->method('set')
             ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(0))
             ->willThrowException(new CacheException());
+        $dispatcher = $this->newMock(EventDispatcherInterface::class);
+
+        /** @var CacheInterface $cache */
+        $dispatcher->expects($this->exactly(7))
+            ->method('dispatch')
+            ->withConsecutive(
+                [static::equalTo((new Event('cache:get.start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:get.miss'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:start'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:stop'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('build:validation.success'))->withCache($cache, 'foo'))],
+                [static::equalTo((new Event('cache:set.start'))->withCache($cache, 'foo'))],
+                [static::callback(function(Event $event) : bool {
+                    if($event->getMessage() !== 'cache:set.error') {
+                        return false;
+                    }
+                    if(!($event->getException() instanceof InvalidArgumentException)) {
+                        return false;
+                    }
+                    if($event->isPropagationStopped()) {
+                        return false;
+                    }
+                    return true;
+                })]
+            );
 
         // act
         $builder = (new CacheBuilder())
             ->withBuilder(function() : string {
                 return 'qux';
             })
-
-            /** @var CacheInterface $cache */
             ->withCache($cache, function() : string {
                 return 'foo';
             });
@@ -652,16 +660,5 @@ class CacheBuilder_Test extends TestCase {
 
         // assert
         static::assertEquals('qux', $result);
-    }
-
-    /**
-     * @param string $class
-     * @return MockObject
-     */
-    private function newMock(string $class) : MockObject {
-        return $this->getMockBuilder($class)
-            ->setMethods(get_class_methods($class))
-            ->disableOriginalConstructor()
-            ->getMock();
     }
 }

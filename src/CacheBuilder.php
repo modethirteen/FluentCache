@@ -96,52 +96,59 @@ class CacheBuilder implements ICacheBuilder {
     }
 
     public function get() {
-        $dispatcher = $this->getDispatcher();
         if($this->getCache() !== null) {
-            $dispatcher->dispatch(new Event(Event::CACHE_GET_START));
+            $this->dispatch(new Event(Event::CACHE_GET_START));
             $key = $this->getCacheKey();
             try {
                 $result = $key !== null ? $this->cache->get($key) : null;
             } catch(CacheException $e) {
-                $dispatcher->dispatch(
+                $this->dispatch(
                     (new Event(Event::CACHE_GET_ERROR))
                         ->withException($e)
                 );
                 $result = null;
             }
-            $cacheValidator = $this->cacheValidator;
-            if($cacheValidator($result) === true) {
-                $dispatcher->dispatch(new Event(Event::CACHE_GET_STOP_HIT));
-                return $result;
+            if($result === null) {
+                $this->dispatch(new Event(Event::CACHE_GET_MISS));
+            } else {
+                $this->dispatch(new Event(Event::CACHE_GET_HIT));
+                $cacheValidator = $this->cacheValidator;
+                if($cacheValidator($result) === true) {
+                    $this->dispatch(new Event(Event::CACHE_VALIDATION_SUCCESS));
+                    return $result;
+                }
+                $this->dispatch(new Event(Event::CACHE_VALIDATION_FAIL));
             }
-            $dispatcher->dispatch(new Event(Event::CACHE_GET_STOP_MISS));
         }
         if($this->builder === null) {
             return null;
         }
-        $dispatcher->dispatch(new Event(Event::BUILD_START));
+        $this->dispatch(new Event(Event::BUILD_START));
         $builder = $this->builder;
         $result = $builder();
-        $dispatcher->dispatch(new Event(Event::BUILD_STOP));
+        $this->dispatch(new Event(Event::BUILD_STOP));
         $buildValidator = $this->buildValidator;
         if($buildValidator($result) === true) {
-            $dispatcher->dispatch(new Event(Event::BUILD_VALIDATION_PASS));
+            $this->dispatch(new Event(Event::BUILD_VALIDATION_SUCCESS));
             $key = $this->getCacheKey();
             if($this->getCache() !== null && $key !== null) {
                 $cacheLifespanBuilder = $this->cacheLifespanBuilder;
-                $dispatcher->dispatch(new Event(Event::CACHE_SET_START));
+                $this->dispatch(new Event(Event::CACHE_SET_START));
                 try {
-                    $this->cache->set($key, $result, $cacheLifespanBuilder($result));
-                    $dispatcher->dispatch(new Event(Event::CACHE_SET_STOP));
+                    if($this->cache->set($key, $result, $cacheLifespanBuilder($result))) {
+                        $this->dispatch(new Event(Event::CACHE_SET_SUCCESS));
+                    } else {
+                        $this->dispatch(new Event(Event::CACHE_SET_FAIL));
+                    }
                 } catch(CacheException $e) {
-                    $dispatcher->dispatch(
+                    $this->dispatch(
                         (new Event(Event::CACHE_SET_ERROR))
                             ->withException($e)
                     );
                 }
             }
         } else {
-            $dispatcher->dispatch(new Event(Event::BUILD_VALIDATION_FAIL));
+            $this->dispatch(new Event(Event::BUILD_VALIDATION_FAIL));
         }
         return $result;
     }
@@ -203,13 +210,16 @@ class CacheBuilder implements ICacheBuilder {
     }
 
     /**
-     * @return EventDispatcherInterface|null
+     * @param Event $event
      */
-    private function getDispatcher() : ?EventDispatcherInterface {
+    private function dispatch(Event $event) : void {
         if($this->dispatcher === null) {
             $func = $this->lazyDispatcher;
             $this->dispatcher = $func($this);
         }
-        return $this->dispatcher;
+        if($this->getCache() !== null) {
+            $event = $event->withCache($this->getCache(), $this->getCacheKey());
+        }
+        $this->dispatcher->dispatch($event);
     }
 }
