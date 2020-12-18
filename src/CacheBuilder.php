@@ -88,7 +88,8 @@ class CacheBuilder implements ICacheBuilder {
         };
         $this->lazyDispatcher = function() : EventDispatcherInterface {
             return new class implements EventDispatcherInterface {
-                public function dispatch(object $event) {
+                public function dispatch(object $event) : object {
+                    return $event;
                 }
             };
         };
@@ -191,7 +192,6 @@ class CacheBuilder implements ICacheBuilder {
     public function withEventDispatcher(EventDispatcherInterface $dispatcher) : ICacheBuilder {
         $instance = clone $this;
         $instance->dispatcher = $dispatcher;
-        $instance->lazyDispatcher = null;
         return $instance;
     }
 
