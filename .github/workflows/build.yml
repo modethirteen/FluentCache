@@ -2,16 +2,16 @@ name: build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 1.x ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, 1.x ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: [7.4]
+        php-versions: [7.2, 7.3, 7.4]
 
     steps:
       - uses: actions/checkout@v2

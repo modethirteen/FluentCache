@@ -93,10 +93,10 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
 
     /**
      * @param CacheInterface $cache
-     * @param string $key
+     * @param string|null $key
      * @return static
      */
-    public function withCache(CacheInterface $cache, string $key) : object {
+    public function withCache(CacheInterface $cache, ?string $key = null) : object {
         $event = clone $this;
         $event->cacheType = get_class($cache);
         $event->cacheKey = $key;
