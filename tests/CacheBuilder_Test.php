@@ -120,8 +120,6 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
@@ -163,14 +161,10 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willReturn(null);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
             ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(0))
@@ -219,14 +213,10 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willReturn(null);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
             ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(1500))
@@ -281,8 +271,6 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
@@ -324,14 +312,10 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willReturn('fred');
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
             ->with(static::equalTo('foo'), static::equalTo('xyzzy'), static::equalTo(0))
@@ -386,14 +370,10 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willReturn('fred');
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
             ->with(static::equalTo('bar'), static::equalTo('xyzzy'), static::equalTo(0))
@@ -453,8 +433,6 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
@@ -508,14 +486,10 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willThrowException(new CacheException());
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
             ->with(static::equalTo('foo'), static::equalTo('plugh'), static::equalTo(0))
@@ -576,14 +550,10 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willReturn(null);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
             ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(0))
@@ -703,8 +673,6 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
@@ -730,14 +698,10 @@ class CacheBuilder_Test extends TestCase {
 
         // arrange
         $cache = $this->newMock(CacheInterface::class);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('get')
             ->with(static::equalTo('foo'))
             ->willReturn(null);
-
-        /** @noinspection PhpParamsInspection */
         $cache->expects($this->once())
             ->method('set')
             ->with(static::equalTo('foo'), static::equalTo('qux'), static::equalTo(0));

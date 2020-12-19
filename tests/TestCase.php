@@ -28,7 +28,7 @@ class TestCase extends \PHPUnit\Framework\TestCase {
      */
     protected function newMock(string $class) : MockObject {
         return $this->getMockBuilder($class)
-            ->setMethods(get_class_methods($class))
+            ->onlyMethods(get_class_methods($class))
             ->disableOriginalConstructor()
             ->getMock();
     }

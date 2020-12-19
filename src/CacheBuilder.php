@@ -18,7 +18,6 @@ namespace modethirteen\FluentCache;
 
 use Closure;
 use Exception;
-use modethirteen\FluentCache\Exception\BuildException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheException;
 use Psr\SimpleCache\CacheInterface;
@@ -28,52 +27,52 @@ class CacheBuilder implements ICacheBuilder {
     /**
      * @var Closure
      */
-    private $buildValidator;
+    private Closure $buildValidator;
 
     /**
      * @var Closure|null
      */
-    private $builder = null;
+    private ?Closure $builder = null;
 
     /**
      * @var CacheInterface|null
      */
-    private $cache = null;
+    private ?CacheInterface $cache = null;
 
     /**
      * @var string|null
      */
-    private $cacheKey = null;
+    private ?string $cacheKey = null;
 
     /**
      * @var Closure
      */
-    private $cacheKeyBuilder;
+    private Closure $cacheKeyBuilder;
 
     /**
      * @var Closure
      */
-    private $cacheLifespanBuilder;
+    private Closure $cacheLifespanBuilder;
 
     /**
      * @var Closure
      */
-    private $cacheValidator;
+    private Closure $cacheValidator;
 
     /**
      * @var EventDispatcherInterface|null
      */
-    private $dispatcher = null;
+    private ?EventDispatcherInterface $dispatcher = null;
 
     /**
      * @var bool
      */
-    private $isCacheKeyStale = true;
+    private bool $isCacheKeyStale = true;
 
     /**
      * @var Closure
      */
-    private $lazyDispatcher;
+    private Closure $lazyDispatcher;
 
     /**
      * Creates an instance with a simple build/cache validators that check results for null

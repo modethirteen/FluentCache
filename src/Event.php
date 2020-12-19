@@ -38,27 +38,27 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
     /**
      * @var string|null
      */
-    private $cacheKey = null;
+    private ?string $cacheKey = null;
 
     /**
      * @var string|null
      */
-    private $cacheType = null;
+    private ?string $cacheType = null;
 
     /**
      * @var Exception|null
      */
-    private $buildException = null;
+    private ?Exception $buildException = null;
 
     /**
      * @var CacheException|null
      */
-    private $cacheException = null;
+    private ?CacheException $cacheException = null;
 
     /**
      * @var string
      */
-    private $message;
+    private string $message;
 
     /**
      * @param string $message

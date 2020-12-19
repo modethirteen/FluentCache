@@ -16,6 +16,7 @@
  */
 namespace modethirteen\FluentCache\Tests;
 
+use Exception;
 use modethirteen\FluentCache\Event;
 use Psr\SimpleCache\CacheInterface;
 
@@ -33,6 +34,7 @@ class Event_Test extends TestCase {
         static::assertEquals('foo', $event->getMessage());
         static::assertNull($event->getCacheKey());
         static::assertNull($event->getCacheType());
+        static::assertNull($event->getBuildException());
         static::assertNull($event->getCacheException());
         static::assertFalse($event->isPropagationStopped());
     }
@@ -46,18 +48,21 @@ class Event_Test extends TestCase {
         $cache = $this->newMock(CacheInterface::class);
 
         // act
-        $e = new CacheException();
+        $buildException = new Exception();
+        $cacheException = new CacheException();
         $event = (new Event('foo'))
+            ->withBuildException($buildException)
 
             /** @var CacheInterface $cache */
             ->withCache($cache, 'qux')
-            ->withCacheException($e);
+            ->withCacheException($cacheException);
 
         // assert
         static::assertEquals('foo', $event->getMessage());
         static::assertEquals('qux', $event->getCacheKey());
         static::assertStringStartsWith('Mock_CacheInterface_', $event->getCacheType());
-        static::assertSame($e, $event->getCacheException());
+        static::assertSame($buildException, $event->getBuildException());
+        static::assertSame($cacheException, $event->getCacheException());
         static::assertFalse($event->isPropagationStopped());
     }
 
