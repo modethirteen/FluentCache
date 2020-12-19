@@ -18,7 +18,6 @@ namespace modethirteen\FluentCache;
 
 use Closure;
 use Exception;
-use modethirteen\FluentCache\Exception\BuildException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheException;
 use Psr\SimpleCache\CacheInterface;
