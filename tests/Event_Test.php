@@ -33,7 +33,7 @@ class Event_Test extends TestCase {
         static::assertEquals('foo', $event->getMessage());
         static::assertNull($event->getCacheKey());
         static::assertNull($event->getCacheType());
-        static::assertNull($event->getException());
+        static::assertNull($event->getCacheException());
         static::assertFalse($event->isPropagationStopped());
     }
 
@@ -51,13 +51,13 @@ class Event_Test extends TestCase {
 
             /** @var CacheInterface $cache */
             ->withCache($cache, 'qux')
-            ->withException($e);
+            ->withCacheException($e);
 
         // assert
         static::assertEquals('foo', $event->getMessage());
         static::assertEquals('qux', $event->getCacheKey());
         static::assertStringStartsWith('Mock_CacheInterface_', $event->getCacheType());
-        static::assertSame($e, $event->getException());
+        static::assertSame($e, $event->getCacheException());
         static::assertFalse($event->isPropagationStopped());
     }
 

@@ -17,7 +17,6 @@
 namespace modethirteen\FluentCache\Tests;
 
 use Exception;
-use Psr\SimpleCache\InvalidArgumentException;
 
-class CacheException extends Exception implements InvalidArgumentException {
+class CacheException extends Exception implements \Psr\SimpleCache\CacheException {
 }

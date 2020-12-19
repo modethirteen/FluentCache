@@ -16,6 +16,7 @@
  */
 namespace modethirteen\FluentCache;
 
+use Exception;
 use Psr\EventDispatcher\StoppableEventInterface;
 use Psr\SimpleCache\CacheException;
 use Psr\SimpleCache\CacheInterface;
@@ -25,12 +26,10 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
     const CACHE_GET_ERROR = 'cache:get.error';
     const CACHE_GET_HIT = 'cache:get.hit';
     const CACHE_GET_MISS = 'cache:get.miss';
-    const CACHE_VALIDATION_SUCCESS = 'cache:validation.success';
-    const CACHE_VALIDATION_FAIL = 'cache:validation.fail';
     const BUILD_START = 'build:start';
-    const BUILD_STOP = 'build:stop';
-    const BUILD_VALIDATION_SUCCESS = 'build:validation.success';
-    const BUILD_VALIDATION_FAIL = 'build:validation.fail';
+    const BUILD_ERROR = 'build:error';
+    const BUILD_SUCCESS = 'build:success';
+    const BUILD_FAIL = 'build:fail';
     const CACHE_SET_START = 'cache:set.start';
     const CACHE_SET_ERROR = 'cache:set.error';
     const CACHE_SET_SUCCESS = 'cache:set.success';
@@ -47,9 +46,14 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
     private $cacheType = null;
 
     /**
+     * @var Exception|null
+     */
+    private $buildException = null;
+
+    /**
      * @var CacheException|null
      */
-    private $exception = null;
+    private $cacheException = null;
 
     /**
      * @var string
@@ -61,6 +65,13 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
      */
     public function __construct(string $message) {
         $this->message = $message;
+    }
+
+    /**
+     * @return Exception|null
+     */
+    public function getBuildException() : ?Exception {
+        return $this->buildException;
     }
 
     /**
@@ -80,8 +91,8 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
     /**
      * @return CacheException|null
      */
-    public function getException() : ?CacheException {
-        return $this->exception;
+    public function getCacheException() : ?CacheException {
+        return $this->cacheException;
     }
 
     /**
@@ -89,6 +100,16 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
      */
     public function getMessage() : string {
         return $this->message;
+    }
+
+    /**
+     * @param Exception $e
+     * @return static
+     */
+    public function withBuildException(Exception $e) : object {
+        $event = clone $this;
+        $event->buildException = $e;
+        return $event;
     }
 
     /**
@@ -107,9 +128,9 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
      * @param CacheException $e
      * @return static
      */
-    public function withException(CacheException $e) : object {
+    public function withCacheException(CacheException $e) : object {
         $event = clone $this;
-        $event->exception = $e;
+        $event->cacheException = $e;
         return $event;
     }
 }

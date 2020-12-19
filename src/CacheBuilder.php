@@ -17,6 +17,8 @@
 namespace modethirteen\FluentCache;
 
 use Closure;
+use Exception;
+use modethirteen\FluentCache\Exception\BuildException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheException;
 use Psr\SimpleCache\CacheInterface;
@@ -102,34 +104,30 @@ class CacheBuilder implements ICacheBuilder {
             try {
                 $result = $key !== null ? $this->cache->get($key) : null;
             } catch(CacheException $e) {
-                $this->dispatch(
-                    (new Event(Event::CACHE_GET_ERROR))
-                        ->withException($e)
-                );
+                $this->dispatch((new Event(Event::CACHE_GET_ERROR))->withCacheException($e));
                 $result = null;
             }
-            if($result === null) {
-                $this->dispatch(new Event(Event::CACHE_GET_MISS));
-            } else {
+            $cacheValidator = $this->cacheValidator;
+            if($cacheValidator($result) === true) {
                 $this->dispatch(new Event(Event::CACHE_GET_HIT));
-                $cacheValidator = $this->cacheValidator;
-                if($cacheValidator($result) === true) {
-                    $this->dispatch(new Event(Event::CACHE_VALIDATION_SUCCESS));
-                    return $result;
-                }
-                $this->dispatch(new Event(Event::CACHE_VALIDATION_FAIL));
+                return $result;
             }
+            $this->dispatch(new Event(Event::CACHE_GET_MISS));
         }
         if($this->builder === null) {
             return null;
         }
         $this->dispatch(new Event(Event::BUILD_START));
         $builder = $this->builder;
-        $result = $builder();
-        $this->dispatch(new Event(Event::BUILD_STOP));
+        try {
+            $result = $builder();
+        } catch(Exception $e) {
+            $this->dispatch((new Event(Event::BUILD_ERROR))->withBuildException($e));
+            $result = null;
+        }
         $buildValidator = $this->buildValidator;
         if($buildValidator($result) === true) {
-            $this->dispatch(new Event(Event::BUILD_VALIDATION_SUCCESS));
+            $this->dispatch(new Event(Event::BUILD_SUCCESS));
 
             // the cache key used for setting a value may be different than the key used to get a value if upstream
             // ...dependencies and state have changed - to be safe, we regenerate the key
@@ -145,14 +143,11 @@ class CacheBuilder implements ICacheBuilder {
                         $this->dispatch(new Event(Event::CACHE_SET_FAIL));
                     }
                 } catch(CacheException $e) {
-                    $this->dispatch(
-                        (new Event(Event::CACHE_SET_ERROR))
-                            ->withException($e)
-                    );
+                    $this->dispatch((new Event(Event::CACHE_SET_ERROR))->withCacheException($e));
                 }
             }
         } else {
-            $this->dispatch(new Event(Event::BUILD_VALIDATION_FAIL));
+            $this->dispatch(new Event(Event::BUILD_FAIL));
         }
         return $result;
     }
