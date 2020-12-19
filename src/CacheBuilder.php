@@ -66,6 +66,11 @@ class CacheBuilder implements ICacheBuilder {
     private $dispatcher = null;
 
     /**
+     * @var bool
+     */
+    private $isCacheKeyStale = true;
+
+    /**
      * @var Closure
      */
     private $lazyDispatcher;
@@ -131,7 +136,7 @@ class CacheBuilder implements ICacheBuilder {
 
             // the cache key used for setting a value may be different than the key used to get a value if upstream
             // ...dependencies and state have changed - to be safe, we regenerate the key
-            $this->cacheKey = null;
+            $this->isCacheKeyStale = true;
             $key = $this->getCacheKey();
             if($this->getCache() !== null && $key !== null) {
                 $cacheLifespanBuilder = $this->cacheLifespanBuilder;
@@ -157,9 +162,10 @@ class CacheBuilder implements ICacheBuilder {
     }
 
     public function getCacheKey() : ?string {
-        if($this->cacheKey === null) {
+        if($this->isCacheKeyStale) {
             $cacheKeyBuilder = $this->cacheKeyBuilder;
             $this->cacheKey = $cacheKeyBuilder();
+            $this->isCacheKeyStale = false;
         }
         return $this->cacheKey;
     }

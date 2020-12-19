@@ -412,6 +412,7 @@ class CacheBuilder_Test extends TestCase {
                 [static::equalTo((new Event('cache:set.success'))->withCache($cache, 'bar'))]
             );
         $key = 'foo';
+        $counter = 0;
 
         // act
         $builder = (new CacheBuilder())
@@ -419,7 +420,8 @@ class CacheBuilder_Test extends TestCase {
                 $key = 'bar';
                 return 'xyzzy';
             })
-            ->withCache($cache, function() use (&$key) : string {
+            ->withCache($cache, function() use (&$key, &$counter) : string {
+                $counter++;
                 return $key;
             })
             ->withCacheValidator(function($result) : bool {
@@ -439,6 +441,7 @@ class CacheBuilder_Test extends TestCase {
 
         // assert
         static::assertEquals('xyzzy', $result);
+        static::assertEquals(2, $counter);
     }
 
     /**
