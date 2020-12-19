@@ -69,7 +69,7 @@ $result = (new CacheBuilder())
         if(!($result instanceof Bar)) {
             return false;
         }
-        return $result->someProperty = 'some value';
+        return $result->someProperty === 'some value';
     });
     ->withBuilder(function() : object {
 
