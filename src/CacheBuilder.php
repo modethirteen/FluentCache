@@ -21,6 +21,8 @@ use Exception;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheException;
 use Psr\SimpleCache\CacheInterface;
+use Ramsey\Uuid\UuidFactory;
+use Ramsey\Uuid\UuidFactoryInterface;
 
 class CacheBuilder implements ICacheBuilder {
 
@@ -75,11 +77,22 @@ class CacheBuilder implements ICacheBuilder {
     private Closure $lazyDispatcher;
 
     /**
+     * @var UuidFactoryInterface
+     */
+    private $uuidFactory;
+
+    /**
+     * @var string|null
+     */
+    private $sessionId = null;
+
+    /**
      * Creates an instance with a simple build/cache validators that check results for null
      *
      * @note it is intended that references in this instance are maintained when the instance is cloned
+     * @param UuidFactoryInterface|null $uuidFactory - an optional uuid generation override to control automatic session ids
      */
-    public function __construct() {
+    public function __construct(?UuidFactoryInterface $uuidFactory = null) {
         $this->buildValidator = function($result) : bool {
             return $result !== null;
         };
@@ -99,39 +112,44 @@ class CacheBuilder implements ICacheBuilder {
                 }
             };
         };
+        $this->uuidFactory = $uuidFactory ?? new UuidFactory();
+    }
+
+    public function __clone() {
+        $this->sessionId = null;
     }
 
     public function get() {
         if($this->getCache() !== null) {
-            $this->dispatch(new Event(Event::CACHE_GET_START));
+            $this->dispatch($this->newEvent(Event::CACHE_GET_START));
             $key = $this->getCacheKey();
             try {
                 $result = $key !== null ? $this->cache->get($key) : null;
             } catch(CacheException $e) {
-                $this->dispatch((new Event(Event::CACHE_GET_ERROR))->withCacheException($e));
+                $this->dispatch($this->newEvent(Event::CACHE_GET_ERROR)->withCacheException($e));
                 $result = null;
             }
             $cacheValidator = $this->cacheValidator;
             if($cacheValidator($result) === true) {
-                $this->dispatch(new Event(Event::CACHE_GET_HIT));
+                $this->dispatch($this->newEvent(Event::CACHE_GET_HIT));
                 return $result;
             }
-            $this->dispatch(new Event(Event::CACHE_GET_MISS));
+            $this->dispatch($this->newEvent(Event::CACHE_GET_MISS));
         }
         if($this->builder === null) {
             return null;
         }
-        $this->dispatch(new Event(Event::BUILD_START));
+        $this->dispatch($this->newEvent(Event::BUILD_START));
         $builder = $this->builder;
         try {
             $result = $builder();
         } catch(Exception $e) {
-            $this->dispatch((new Event(Event::BUILD_ERROR))->withBuildException($e));
+            $this->dispatch($this->newEvent(Event::BUILD_ERROR)->withBuildException($e));
             $result = null;
         }
         $buildValidator = $this->buildValidator;
         if($buildValidator($result) === true) {
-            $this->dispatch(new Event(Event::BUILD_SUCCESS));
+            $this->dispatch($this->newEvent(Event::BUILD_SUCCESS));
 
             // the cache key used for setting a value may be different than the key used to get a value if upstream
             // ...dependencies and state have changed - to be safe, we regenerate the key
@@ -139,19 +157,19 @@ class CacheBuilder implements ICacheBuilder {
             $key = $this->getCacheKey();
             if($this->getCache() !== null && $key !== null) {
                 $cacheLifespanBuilder = $this->cacheLifespanBuilder;
-                $this->dispatch(new Event(Event::CACHE_SET_START));
+                $this->dispatch($this->newEvent(Event::CACHE_SET_START));
                 try {
                     if($this->cache->set($key, $result, $cacheLifespanBuilder($result))) {
-                        $this->dispatch(new Event(Event::CACHE_SET_SUCCESS));
+                        $this->dispatch($this->newEvent(Event::CACHE_SET_SUCCESS));
                     } else {
-                        $this->dispatch(new Event(Event::CACHE_SET_FAIL));
+                        $this->dispatch($this->newEvent(Event::CACHE_SET_FAIL));
                     }
                 } catch(CacheException $e) {
-                    $this->dispatch((new Event(Event::CACHE_SET_ERROR))->withCacheException($e));
+                    $this->dispatch($this->newEvent(Event::CACHE_SET_ERROR)->withCacheException($e));
                 }
             }
         } else {
-            $this->dispatch(new Event(Event::BUILD_FAIL));
+            $this->dispatch($this->newEvent(Event::BUILD_FAIL));
         }
         return $result;
     }
@@ -167,6 +185,13 @@ class CacheBuilder implements ICacheBuilder {
             $this->isCacheKeyStale = false;
         }
         return $this->cacheKey;
+    }
+
+    public function getSessionId() : string {
+        if($this->sessionId === null) {
+            $this->sessionId = $this->uuidFactory->uuid4()->toString();
+        }
+        return $this->sessionId;
     }
 
     public function withBuildValidator(Closure $validator) : ICacheBuilder {
@@ -213,6 +238,12 @@ class CacheBuilder implements ICacheBuilder {
         return $instance;
     }
 
+    public function withSessionId(string $sessionId) : ICacheBuilder {
+        $instance = clone $this;
+        $instance->sessionId = $sessionId;
+        return $instance;
+    }
+
     /**
      * @param Event $event
      */
@@ -225,5 +256,13 @@ class CacheBuilder implements ICacheBuilder {
             $event = $event->withCache($this->getCache(), $this->getCacheKey());
         }
         $this->dispatcher->dispatch($event);
+    }
+
+    /**
+     * @param string $message
+     * @return Event
+     */
+    private function newEvent(string $message) : Event {
+        return new Event($message, $this->getSessionId());
     }
 }

@@ -38,6 +38,13 @@ interface ICacheBuilder {
     function getCacheKey() : ?string;
 
     /**
+     * Return the user defined session id or fallback to a random UUID v4
+     *
+     * @return string
+     */
+    function getSessionId() : string;
+
+    /**
      * @param Closure $builder - <$builder() : mixed> : returns result to set in cache and return
      * @return ICacheBuilder
      */
@@ -79,4 +86,10 @@ interface ICacheBuilder {
      * @return ICacheBuilder
      */
     function withLazyEventDispatcher(Closure $dispatcher) : ICacheBuilder;
+
+    /**
+     * @param string $sessionId - a user defined token to identify events in downstream processing
+     * @return ICacheBuilder
+     */
+    function withSessionId(string $sessionId) : ICacheBuilder;
 }
