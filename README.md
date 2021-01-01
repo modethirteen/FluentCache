@@ -45,7 +45,7 @@ The principal type that FluentCache provides is `CacheBuilder`. `CacheBuilder` i
   * If miss, build an object, set it in the cache, and return the object
   * If hit, return the object
 
-Managing these steps, choosing what to profile, when to validate, or other cache-specific decision making isn't the responsibility of the calling code: the caller just wants to _get_ an object, it shouldn't care if it comes from a cache, if the data is stale, or the object is built for the first time. `CacheBuilder` separates this concern and encapsulates it, exposing custom logic hooks for reasonable flexibility.
+Managing these steps, choosing what to profile, when to validate, or other cache-specific decision-making isn't the responsibility of the calling code: the caller just wants to _get_ an object, it shouldn't care if it comes from a cache, if the data is stale, or the object is built for the first time. `CacheBuilder` separates this concern and encapsulates it, exposing custom logic hooks for reasonable flexibility.
 
 ```php
 class Memcache implements \Psr\SimpleCache\CacheInterface {}
@@ -70,7 +70,7 @@ $result = (new CacheBuilder())
             return false;
         }
         return $result->someProperty === 'some value';
-    });
+    })
     ->withBuilder(function() : object {
 
         // build a cacheable object if cache miss
@@ -89,7 +89,14 @@ $result = (new CacheBuilder())
     ->withLazyEventDispatcher(function(CacheBuilder $this) : EventDispatcherInterface {
         return new Dispatcher();
     })
-
+ 
+    // set a custom identifier to track this cache session in downstream event processors
+    // ...session ids are automatically generated if not provided
+    // ...session ids are re-generated everytime the immutable cache builder is cloned 
+    ->withSessionId('123')
+ 
     // fetch object from cache or build it and set it in the cache - the caller doesn't care!
     ->get();
 ```
+
+
