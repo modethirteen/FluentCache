@@ -61,10 +61,17 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
     private $message;
 
     /**
-     * @param string $message
+     * @var string
      */
-    public function __construct(string $message) {
+    private $sessionId;
+
+    /**
+     * @param string $message
+     * @param string $sessionId
+     */
+    public function __construct(string $message, string $sessionId) {
         $this->message = $message;
+        $this->sessionId = $sessionId;
     }
 
     /**
@@ -100,6 +107,13 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
      */
     public function getMessage() : string {
         return $this->message;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSessionId() : string {
+        return $this->sessionId;
     }
 
     /**

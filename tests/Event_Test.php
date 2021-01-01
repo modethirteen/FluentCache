@@ -27,13 +27,14 @@ class Event_Test extends TestCase {
     public function Can_construct_an_event() : void {
 
         // act
-        $event = new Event('foo');
+        $event = new Event('foo', 'bar');
 
         // assert
         static::assertEquals('foo', $event->getMessage());
         static::assertNull($event->getCacheKey());
         static::assertNull($event->getCacheType());
         static::assertNull($event->getCacheException());
+        static::assertEquals('bar', $event->getSessionId());
         static::assertFalse($event->isPropagationStopped());
     }
 
@@ -47,7 +48,7 @@ class Event_Test extends TestCase {
 
         // act
         $e = new CacheException();
-        $event = (new Event('foo'))
+        $event = (new Event('foo', 'plugh'))
 
             /** @var CacheInterface $cache */
             ->withCache($cache, 'qux')
@@ -58,6 +59,7 @@ class Event_Test extends TestCase {
         static::assertEquals('qux', $event->getCacheKey());
         static::assertStringStartsWith('Mock_CacheInterface_', $event->getCacheType());
         static::assertSame($e, $event->getCacheException());
+        static::assertEquals('plugh', $event->getSessionId());
         static::assertFalse($event->isPropagationStopped());
     }
 
@@ -67,7 +69,7 @@ class Event_Test extends TestCase {
     public function Can_stop_propagation() : void {
 
         // arrange
-        $event = (new Event('foo'));
+        $event = (new Event('foo', 'qux'));
 
         // act
         $event->stopPropagation();;
