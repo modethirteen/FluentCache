@@ -51,7 +51,7 @@ class Event_Test extends TestCase {
         // act
         $buildException = new Exception();
         $cacheException = new CacheException();
-        $event = (new Event('foo'))
+        $event = (new Event('foo', 'plugh'))
             ->withBuildException($buildException)
 
             /** @var CacheInterface $cache */
@@ -77,7 +77,7 @@ class Event_Test extends TestCase {
         $event = (new Event('foo', 'qux'));
 
         // act
-        $event->stopPropagation();;
+        $event->stopPropagation();
 
         // assert
         static::assertTrue($event->isPropagationStopped());

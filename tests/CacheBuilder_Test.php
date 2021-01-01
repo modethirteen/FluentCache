@@ -806,7 +806,7 @@ class CacheBuilder_Test extends TestCase {
         static::assertEquals('qwerty', $thirdSessionId);
     }
 
-    protected function setUp() {
+    protected function setUp() : void {
         parent::setUp();
         $uuid = $this->newMock(UuidInterface::class);
         $uuid->expects($this->any())

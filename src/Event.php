@@ -63,7 +63,7 @@ class Event extends \Symfony\Contracts\EventDispatcher\Event implements Stoppabl
     /**
      * @var string
      */
-    private $sessionId;
+    private string $sessionId;
 
     /**
      * @param string $message

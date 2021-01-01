@@ -79,12 +79,12 @@ class CacheBuilder implements ICacheBuilder {
     /**
      * @var UuidFactoryInterface
      */
-    private $uuidFactory;
+    private UuidFactoryInterface $uuidFactory;
 
     /**
      * @var string|null
      */
-    private $sessionId = null;
+    private ?string $sessionId = null;
 
     /**
      * Creates an instance with a simple build/cache validators that check results for null
