@@ -9,7 +9,6 @@ A fluent cache builder API for [PSR-16](https://www.php-fig.org/psr/psr-16/) com
 
 ## Requirements
 
-* PHP 7.2, 7.3, 7.4 (1.x)
 * PHP 7.4 (main, 2.x)
 
 ## Installation
